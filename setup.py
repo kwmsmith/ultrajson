@@ -106,7 +106,7 @@ setup(
     description = "Ultra fast JSON encoder and decoder for Python",
     long_description = README,
     libraries = [libdoubleconversion],
-    ext_modules = cythonize([module2]),
+    ext_modules = cythonize([module2], include_path=['./python']),
     author="Jonas Tarnstrom",
     author_email="jonas.tarnstrom@esn.me",
     download_url="http://github.com/esnme/ultrajson",
