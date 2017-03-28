@@ -2,6 +2,7 @@ try:
   from setuptools import setup, Extension
 except ImportError:
   from distutils.core import setup, Extension
+from Cython.Build import cythonize
 import distutils.sysconfig
 from distutils.sysconfig import customize_compiler
 from distutils.command.build_clib import build_clib
@@ -49,6 +50,20 @@ class build_clib_without_warnings(build_clib):
         build_clib.build_libraries(self, libraries)
 
 
+module2 = Extension(
+    'cyujson',
+     sources = [
+         './python/cyujson.pyx',
+         './python/objToJSON.c',
+         './python/JSONtoObj.c',
+         './lib/ultrajsonenc.c',
+         './lib/ultrajsondec.c'
+     ],
+     include_dirs = ['./python', './lib'],
+     extra_compile_args = ['-D_GNU_SOURCE'],
+     extra_link_args = ['-lstdc++', '-lm']
+)
+
 module1 = Extension(
     'ujson',
      sources = [
@@ -86,12 +101,12 @@ finally:
     
 
 setup(
-    name = 'ujson',
+    name = 'cyujson',
     version = get_version(),
     description = "Ultra fast JSON encoder and decoder for Python",
     long_description = README,
     libraries = [libdoubleconversion],
-    ext_modules = [module1],
+    ext_modules = cythonize([module2]),
     author="Jonas Tarnstrom",
     author_email="jonas.tarnstrom@esn.me",
     download_url="http://github.com/esnme/ultrajson",
