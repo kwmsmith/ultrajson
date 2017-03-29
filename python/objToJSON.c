@@ -743,18 +743,12 @@ static char *Object_iterGetName(JSOBJ obj, JSONTypeContext *tc, size_t *outLen)
   return GET_TC(tc)->iterGetName(obj, tc, outLen);
 }
 
-PyObject* objToJSON(PyObject* self, PyObject *args, PyObject *kwargs)
+PyObject *objToJSON(PyObject *obj, int forceAscii, int encodeHTMLChars,
+        int escapeForwardSlashes, int sortKeys, int indent)
 {
-  static char *kwlist[] = { "obj", "ensure_ascii", "encode_html_chars", "escape_forward_slashes", "sort_keys", "indent", NULL };
-
   char buffer[65536];
-  char *ret;
-  PyObject *newobj;
-  PyObject *oinput = NULL;
-  PyObject *oensureAscii = NULL;
-  PyObject *oencodeHTMLChars = NULL;
-  PyObject *oescapeForwardSlashes = NULL;
-  PyObject *osortKeys = NULL;
+  char *ret = NULL;
+  PyObject *newobj = NULL;
 
   JSONObjectEncoder encoder =
   {
@@ -782,41 +776,17 @@ PyObject* objToJSON(PyObject* self, PyObject *args, PyObject *kwargs)
     NULL, //prv
   };
 
-
-  PRINTMARK();
-
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OOOOi", kwlist, &oinput, &oensureAscii, &oencodeHTMLChars, &oescapeForwardSlashes, &osortKeys, &encoder.indent))
-  {
-    return NULL;
-  }
-
-  if (oensureAscii != NULL && !PyObject_IsTrue(oensureAscii))
-  {
-    encoder.forceASCII = 0;
-  }
-
-  if (oencodeHTMLChars != NULL && PyObject_IsTrue(oencodeHTMLChars))
-  {
-    encoder.encodeHTMLChars = 1;
-  }
-
-  if (oescapeForwardSlashes != NULL && !PyObject_IsTrue(oescapeForwardSlashes))
-  {
-    encoder.escapeForwardSlashes = 0;
-  }
-
-  if (osortKeys != NULL && PyObject_IsTrue(osortKeys))
-  {
-    encoder.sortKeys = 1;
-  }
+  encoder.forceASCII = forceAscii;
+  encoder.encodeHTMLChars = encodeHTMLChars;
+  encoder.escapeForwardSlashes = escapeForwardSlashes;
+  encoder.sortKeys = sortKeys;
 
   dconv_d2s_init(DCONV_D2S_EMIT_TRAILING_DECIMAL_POINT | DCONV_D2S_EMIT_TRAILING_ZERO_AFTER_POINT,
-                 NULL, NULL, 'e', DCONV_DECIMAL_IN_SHORTEST_LOW, DCONV_DECIMAL_IN_SHORTEST_HIGH, 0, 0);
-
-  PRINTMARK();
-  ret = JSON_EncodeObject (oinput, &encoder, buffer, sizeof (buffer));
-  PRINTMARK();
-
+                 NULL, NULL, 'e',
+                 DCONV_DECIMAL_IN_SHORTEST_LOW,
+                 DCONV_DECIMAL_IN_SHORTEST_HIGH,
+                 0, 0);
+  ret = JSON_EncodeObject(obj, &encoder, buffer, sizeof(buffer));
   dconv_d2s_free();
 
   if (PyErr_Occurred())
@@ -828,10 +798,9 @@ PyObject* objToJSON(PyObject* self, PyObject *args, PyObject *kwargs)
   {
     if (ret != buffer)
     {
-      encoder.free (ret);
+      encoder.free(ret);
     }
-
-    PyErr_Format (PyExc_OverflowError, "%s", encoder.errorMsg);
+    PyErr_Format(PyExc_OverflowError, "%s", encoder.errorMsg);
     return NULL;
   }
 
@@ -839,14 +808,14 @@ PyObject* objToJSON(PyObject* self, PyObject *args, PyObject *kwargs)
 
   if (ret != buffer)
   {
-    encoder.free (ret);
+    encoder.free(ret);
   }
 
-  PRINTMARK();
-
   return newobj;
+
 }
 
+/*
 PyObject* objToJSONFile(PyObject* self, PyObject *args, PyObject *kwargs)
 {
   PyObject *data;
@@ -911,3 +880,4 @@ PyObject* objToJSONFile(PyObject* self, PyObject *args, PyObject *kwargs)
 
   Py_RETURN_NONE;
 }
+*/
